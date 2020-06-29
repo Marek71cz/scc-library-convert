@@ -1,0 +1,51 @@
+# XBMC Media Center language file
+# Addon Name: SCC - library conversion
+# Addon id: util.scc.library
+# Addon version: 0.1.0
+# Addon Provider: Marek
+msgid ""
+msgstr ""
+"Project-Id-Version: Kodi Addons\n"
+"Language-Team: LANGUAGE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: cs\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2\n"
+
+msgctxt "#30010"
+msgid "Library"
+msgstr "Knihovna"
+
+msgctxt "#30011"
+msgid "Movies folder"
+msgstr "Adresář pro filmy..."
+
+msgctxt "#30012"
+msgid "TV Shows folder"
+msgstr "Adresář pro seriály..."
+
+msgctxt "#30015"
+msgid "Unknown folder"
+msgstr "Neznámý adresář"
+
+msgctxt "#30016"
+msgid "Please, set up folder for movie library"
+msgstr "Prosím, nastav adresář pro knihovnu filmů"
+
+msgctxt "#30017"
+msgid "Please, set up folder for TV show library"
+msgstr "Prosím, nastav adresář pro knihovnu seriálů"
+
+msgctxt "#30019"
+msgid "Library conversion"
+msgstr "Konverze knihovny"
+
+msgctxt "#30020"
+msgid "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?"
+msgstr "Tato akce zkonvertuje tvou knihovnu filmů ({} filmů) do nejnovější verze Stream Cinema Community. Odhadovaný čas je {} sekund. Spustit konverzi?"
+
+msgctxt "#30021"
+msgid "Conversion of your library is in a process, please wait..."
+msgstr "Konverze knihovny probíhá, prosím čekejte..."
+

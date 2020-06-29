@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+    <category label="30010">
+        <setting label="30011" type="folder" id="movie_folder" default =""/>
+        <setting label="30012" type="folder" id="tvshow_Folder" default =""/>
+        <!--
+        <setting label="30013" type="lsep" />
+        <setting type="action" label="30014" action="RunScript(util.scc.library, special://home/addons/util.scc.library/convert.py)"/>
+        -->
+    </category>
+</settings>

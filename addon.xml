@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="util.scc.library" name="SCC - library conversion" version="0.1.0" provider-name="Marek">
+	<requires>
+		<import addon="xbmc.python" version="2.23.0"/>
+	</requires>
+    <extension point="xbmc.python.script" library="convert.py">
+        <provides>executable</provides>
+    </extension>
+	<extension point="xbmc.addon.metadata">
+		<summary lang="en_GB">Stream Cinema Community library conversion</summary>
+		<description lang="en_GB">This plugin works as a conversion utility. It converts your library stream files (*.strm) to the latest Stream Cinema Community format.</description>
+        <language>en cs</language>
+		<assets>
+			<icon>icon.png</icon>
+		</assets>
+	</extension>
+</addon>

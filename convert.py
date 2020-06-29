@@ -1,0 +1,204 @@
+import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcvfs
+import os
+from os import path
+import urllib2
+from urllib2 import HTTPError
+import json
+from datetime import datetime
+import time
+ 
+MEDIA_DETAIL_URL = "https://plugin.sc2.zone/api/media/{mediaid}";   
+MEDIA_SERVICE_URL = "https://plugin.sc2.zone/api/media/detail/service/{service}/{id}"
+STREAM_URL = "plugin://plugin.video.stream-cinema-2-release/process_media_item/?url=%2Fapi%2Fmedia%2F{mediaid}%2Fstreams&media_id={mediaid}&root_parent_id={root_parent_id}"
+
+ADDON = xbmcaddon.Addon()     
+
+def getMediaDetailURL(mediaid):
+    return MEDIA_DETAIL_URL.format(mediaid=mediaid)
+
+def getMediaServiceURL(service, id):
+    return MEDIA_SERVICE_URL.format(service=service, id=id) 
+
+def writeStreamFile(strmPath, newStrm):
+    # if stream back up file exists, delete it
+    if(path.exists(strmPath + ".back")):
+        os.remove(strmPath + ".back")
+    os.rename(strmPath, strmPath + ".back")
+    file = xbmcvfs.File(strmPath, 'w')
+    file.write(str(newStrm))
+    file.close()
+
+def writeNFOFile(name, id, type):
+    url = getMediaDetailURL(id)
+    detailContents = ''
+    try:
+        detailContents = urllib2.urlopen(url).read()
+    except HTTPError as err:
+        print(err)
+    if(detailContents != ''):
+        mediaDetail = json.loads(detailContents)
+        if('services' in mediaDetail):
+            services = mediaDetail['services']
+            if(path.exists(name)):
+                os.remove(name)
+            file = xbmcvfs.File(name, 'w')
+            if('csfd' in services):
+                csfdId = services['csfd'] 
+                file.write("https://www.csfd.cz/film/{}".format(csfdId) + "\n")
+            if('tmdb' in services):
+                tmdbId = services['tmdb']        
+                file.write("https://www.themoviedb.org/{}/{}".format(type, tmdbId) + "\n")
+            if('imdb' in services):
+                imdbId = services['imdb'] 
+                file.write("https://www.imdb.com/title/{}".format(imdbId) + "\n")
+            file.close()
+        
+def convertMovies(mf):
+    result = []
+    now = datetime.now()
+    result.append("Library conversion begin: {}".format(now.strftime("%Y%m%d-%H%M%S")))
+    result.append("Movies folder: {}".format(mf))
+    print("++++++++++ in convertMovies, mf: " + mf)
+    # read content of movies folder
+    movies = os.listdir(mf)
+    # ask user if he/she really wants to go through movies in library, time estimation
+    timeEst = (len(movies))/2
+    # answer = xbmcgui.Dialog().yesno("Library conversion", "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?".format(len(movies),timeEst))
+    answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30020).format(len(movies),timeEst))
+    if(not(answer)):
+        return
+    dp = xbmcgui.DialogProgress()
+    dp.create(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30021))
+    moviesCount = len(movies)
+    i = 0; 
+    # iterate thru list and get csfd id from nfo file inside each folder
+    for movie in movies:
+        # is it directory
+        if(not(os.path.isdir(os.path.join(mf, movie)))):
+            continue
+        nfoPath = os.path.join(mf, movie, movie + ".nfo")
+        strmPath = os.path.join(mf, movie, movie + ".strm")
+        print("++++++++++ strmPath: " + strmPath)
+        # read strm file (only one line)
+        if os.path.isfile(strmPath):
+            file = open(strmPath, 'r') 
+            lines = file.readlines()
+            file.close()
+            line = lines[0].strip()        
+            print("=> strm: " + line)
+            # it is SC1 stream file?
+            if(line.find("plugin.video.stream-cinema/") > -1):
+                if os.path.isfile(nfoPath):
+                    file = open(nfoPath, 'r') 
+                    lines = file.readlines()
+                    file.close()
+                    csfdId = ''
+                    for line in lines: 
+                        item = line.strip()
+                        print("=> Line: {}".format(item))
+                        index = item.find("film/")
+                        if(index > -1):
+                            csfdId = item
+                            csfdId = csfdId[:-1]
+                            csfdId = csfdId[index+5:]
+                    print("----- it is SC1 stream file, convert it! CSFD ID: " + csfdId)
+                    
+                    # call API service with csfd id and get mediaid
+                    # back up old strm file
+                    # construct SC2 strm link and write it to file
+                    url = getMediaServiceURL('csfd', csfdId)
+                    contents = ''
+                    try:
+                        contents = urllib2.urlopen(url).read()
+                    except HTTPError as err:
+                        result.append("- Movie {} HTTP error {}".format(movie, err.code))
+                    if(contents != ''):
+                        data = json.loads(contents)
+                        sc2Id = data['_id']
+                        print(sc2Id)
+                        # create new strm file for SC2 plugin!
+                        writeStreamFile(strmPath, STREAM_URL.format(mediaid=sc2Id, root_parent_id=sc2Id))
+                        writeNFOFile(nfoPath, sc2Id, 'movie')
+                        print("=> File {} converted successfuly".format(strmPath))
+                        result.append("+ Movie {} converted from SC1 format".format(movie))
+
+                else:
+                    result.append("- Movie {} cannot be converted from SC1 format, nfo file is missing".format(movie))
+
+            # it is stream URL from SC2 release earlier version (prior to 1.3.8)
+            elif (line.find("plugin.video.stream-cinema-2-release/get_streams/") > -1 and line.find("plugin.video.stream-cinema-2-release/get_streams/?") == -1):
+                index = line.find("streams/")
+                sc2Id = line[index+8:]
+                # create new strm file for SC2 plugin!
+                writeStreamFile(strmPath, STREAM_URL.format(mediaid=sc2Id, root_parent_id=sc2Id))
+                writeNFOFile(nfoPath, sc2Id, 'movie')
+                result.append("+ Movie {} converted from earlier version of SC2 (prior to 1.3.8)".format(movie))
+                 
+            # it is stream URL from SC2 release earlier version (1.3.8)
+            elif (line.find("plugin.video.stream-cinema-2-release/get_streams/") > -1):
+                # index = line.find("streams/")
+                sc2Id = line[-24:]
+                # create new strm file for SC2 plugin!
+                writeStreamFile(strmPath, STREAM_URL.format(mediaid=sc2Id, root_parent_id=sc2Id))
+                writeNFOFile(nfoPath, sc2Id, 'movie')
+                result.append("+ Movie {} converted from earlier version of SC2 (1.3.8)".format(movie))
+
+            # it is stream URL from SC2 beta
+            elif (line.find("plugin.video.stream-cinema-2/select_stream/") > -1):
+                result.append("- Movie {} cannot be converted from SC2 beta, not supported - media id mismatch".format(movie))
+                                    
+        else:
+            result.append("- Movie {} cannot be processed, stream file is missing".format(movie))
+
+        # update progress dialog
+        i = i+1
+        print("------ UPDATE progress bar... movie number {}/{}, percentage: {}".format(i, moviesCount, int(100*float(i)/float(moviesCount))))
+        dp.update(int(100*float(i)/float(moviesCount)))
+        time.sleep(0.25)
+        
+        if(dp.iscanceled()):
+            result.append("- Library conversion process canceled by user!")            
+            break
+
+    # write result to a file in root directory of the library
+    dp.close()
+    now = datetime.now()
+    result.append("Library conversion end: {}".format(now.strftime("%Y%m%d-%H%M%S")))
+    resultFileName = os.path.join(mf, "result_{}.txt".format(now.strftime("%Y%m%d-%H%M%S")))
+    print("----- File name: {}".format(resultFileName))
+    print(result)
+    resultFile = xbmcvfs.File(os.path.join(mf, resultFileName), 'w')
+    for line in result:
+        resultFile.write(line)
+        resultFile.write("\n")
+    resultFile.close()
+    
+
+
+def convertTVShows(tf):
+    tvshows = os.listdir(tf)
+
+
+def convertLibrary():
+    print("++++++++++ in convertLibrary")
+    if ADDON.getSetting("movie_folder") == '':
+        xbmcgui.Dialog().notification(ADDON.getLocalizedString(30015), ADDON.getLocalizedString(30016), icon=xbmcgui.NOTIFICATION_WARNING, time=5000)
+        ADDON.openSettings()
+    mf = ADDON.getSetting("movie_folder")
+    if(mf != ''):
+        print("++++++++++ about to convert movies")
+        convertMovies(mf)        
+
+    if ADDON.getSetting("tvshow_Folder") == '':
+        xbmcgui.Dialog().notification(ADDON.getLocalizedString(30015), ADDON.getLocalizedString(30017), icon=xbmcgui.NOTIFICATION_WARNING, time=5000)
+        ADDON.openSettings()
+    tf = ADDON.getSetting("tvshow_Folder")
+    if tf != '':
+        print("++++++++++ about to convert TV shows")
+        convertTVShows(tf)        
+
+
+convertLibrary()

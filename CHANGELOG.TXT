@@ -1,0 +1,2 @@
+0.1.0
+First public version - convert movies in user libraray to Stream Cinema Community format 1.4.0

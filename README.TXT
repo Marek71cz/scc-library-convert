@@ -1,0 +1,1 @@
+This plugin works as a conversion utility. It converts your movies and TV shows library to the latest Stream Cinema Community format.
