@@ -83,15 +83,19 @@ def convertMovies(mf):
     print("++++++++++ in convertMovies, mf: " + mf)
     # read content of movies folder
     movies = os.listdir(mf)
+    count = 0
+    for item in movies:
+        if os.path.isdir(os.path.join(mf, item)):
+            count = count + 1
     # ask user if he/she really wants to go through movies in library, time estimation
-    timeEst = (len(movies))/2
+    timeEst = count/2
     # answer = xbmcgui.Dialog().yesno("Library conversion", "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?".format(len(movies),timeEst))
     answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30020).format(len(movies),timeEst))
     if(not(answer)):
         return
     dp = xbmcgui.DialogProgress()
     dp.create(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30021))
-    moviesCount = len(movies)
+    moviesCount = count
     i = 0; 
     # iterate thru list and get csfd id from nfo file inside each folder
     for movie in movies:
@@ -206,7 +210,7 @@ def convertTVShows(tf):
         if os.path.isdir(os.path.join(tf, item)):
             count = count + 1
     # ask user if he/she really wants to go through TV shows in library, time estimation
-    timeEst = count
+    timeEst = count*5
     answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30022).format(count,timeEst))
     if(not(answer)):
         return
@@ -282,8 +286,8 @@ def convertTVShows(tf):
                         seasons = seasonData['data']
                         clear = False
                         for season in seasons:
+                            sleep(0.5)
                             episodeNo = season['_source']['info_labels']['episode']
-                            
                             if(episodeNo != 0):
                                 seasonDirName = os.path.join(tvshowPath, "Season 01")
                                 if(not(clear)):
