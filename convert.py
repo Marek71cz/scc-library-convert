@@ -30,7 +30,6 @@ def getCSFDIdFromNFOFile(nfoPath):
     csfdId = ''
     for line in lines: 
         item = line.strip()
-        print("=> Line: {}".format(item))
         index = item.find("film/")
         if(index > -1):
             csfdId = item
@@ -104,14 +103,12 @@ def convertMovies(mf):
             continue
         nfoPath = os.path.join(mf, movie, movie + ".nfo")
         strmPath = os.path.join(mf, movie, movie + ".strm")
-        print("++++++++++ strmPath: " + strmPath)
         # read strm file (only one line)
         if os.path.isfile(strmPath):
             file = open(strmPath, 'r') 
             lines = file.readlines()
             file.close()
             line = lines[0].strip()        
-            print("=> strm: " + line)
             # it is SC1 stream file?
             if(line.find("plugin.video.stream-cinema/") > -1):
                 if os.path.isfile(nfoPath):
@@ -130,7 +127,6 @@ def convertMovies(mf):
                     if(contents != ''):
                         data = json.loads(contents)
                         sc2Id = data['_id']
-                        print(sc2Id)
                         # create new strm file for SC2 plugin!
                         writeStreamFile(strmPath, STREAM_URL.format(mediaid=sc2Id, root_parent_id=sc2Id))
                         writeNFOFile(nfoPath, sc2Id, 'movie')
@@ -184,8 +180,6 @@ def convertMovies(mf):
     now = datetime.now()
     result.append("Library conversion end: {}".format(now.strftime("%Y%m%d-%H%M%S")))
     resultFileName = os.path.join(mf, "result_{}.txt".format(now.strftime("%Y%m%d-%H%M%S")))
-    print("----- File name: {}".format(resultFileName))
-    print(result)
     resultFile = xbmcvfs.File(os.path.join(mf, resultFileName), 'w')
     for line in result:
         resultFile.write(line)
@@ -247,12 +241,10 @@ def convertTVShows(tf):
         strmPath = firstEpisode
         # read strm file of first episode to find whether it is SC1 or SCC
         # strmPath = os.path.join(tvshowPath, firstSeason, firstEpisode)
-        print("++++++++++ strmPath: " + strmPath)
         file = open(strmPath, 'r') 
         lines = file.readlines()
         file.close()
         line = lines[0].strip()        
-        print("=> strm: " + line)
 
         # is it SC1 stream file?
         if(line.find("plugin.video.stream-cinema/") > -1):
@@ -267,19 +259,16 @@ def convertTVShows(tf):
                     contents = urllib2.urlopen(url).read()
                 except HTTPError as err:
                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                    print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
                 if(contents != ''):
                     data = json.loads(contents)
                     tvshowId = data['_id']
                     url = MEDIA_URL.format(filter_name = "parent", query = "value=" + tvshowId + "&sort=episode")
-                    print('++++++++++ URL for seasons list: {}'.format(url))
                     tvShowContents = ''
                     seasonsList = []
                     try:
                         tvShowContents = urllib2.urlopen(url).read()
                     except HTTPError as err:
                         result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                        print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
                     if(tvShowContents != ''):
                         seasonData = json.loads(tvShowContents)
                         seasonsCount = seasonData['totalCount']
@@ -302,7 +291,6 @@ def convertTVShows(tf):
                                 episodeNo = season['_source']['info_labels']['episode']
                                 episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2), str(episodeNo).zfill(2))
                                 episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=parentId)
-                                print('++++++++++ WRITING STERAM FILE! file name: {}, content: {}'.format(os.path.join(seasonDirName, episodeFileName), episodeURL))
                                 writeStreamFile(os.path.join(seasonDirName, episodeFileName), episodeURL)
                                 convertResult = True
                             
@@ -322,7 +310,6 @@ def convertTVShows(tf):
                                     episodesContents = urllib2.urlopen(url).read()
                                 except HTTPError as err:
                                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                                    print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
                                 if(episodesContents != ''):
                                     episodesData = json.loads(episodesContents) 
                                     episodes = episodesData['data']
@@ -334,7 +321,6 @@ def convertTVShows(tf):
                                         episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2), str(episodeNo).zfill(2))
                                         episodeId = episode['_id']
                                         episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=seasonId)
-                                        print('++++++++++ WRITING STERAM FILE! file name: {}, content: {}'.format(os.path.join(seasonDirName, episodeFileName), episodeURL))
                                         writeStreamFile(os.path.join(seasonDirName, episodeFileName), episodeURL)
                                         convertResult = True
 
@@ -362,7 +348,6 @@ def convertTVShows(tf):
     now = datetime.now()
     result.append("Library conversion end: {}".format(now.strftime("%Y%m%d-%H%M%S")))
     resultFileName = os.path.join(tf, "result_{}.txt".format(now.strftime("%Y%m%d-%H%M%S")))
-    print("----- File name: {}".format(resultFileName))
     print(result)
     resultFile = xbmcvfs.File(os.path.join(tf, resultFileName), 'w')
     for line in result:
@@ -378,7 +363,6 @@ def convertLibrary():
         ADDON.openSettings()
     mf = ADDON.getSetting("movie_folder")
     if(mf != ''):
-        print("++++++++++ about to convert movies")
         convertMovies(mf)        
 
     if ADDON.getSetting("tvshow_Folder") == '':
@@ -386,7 +370,6 @@ def convertLibrary():
         ADDON.openSettings()
     tf = ADDON.getSetting("tvshow_Folder")
     if tf != '':
-        print("++++++++++ about to convert TV shows")
         convertTVShows(tf)
     
     xbmc.executebuiltin('UpdateLibrary(video)')
