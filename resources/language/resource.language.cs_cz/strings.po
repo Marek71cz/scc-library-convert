@@ -49,3 +49,6 @@ msgctxt "#30021"
 msgid "Conversion of your library is in a process, please wait..."
 msgstr "Konverze knihovny probíhá, prosím čekejte..."
 
+msgctxt "#30022"
+msgid "This will convert your TV show library ({} TV Shows) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?"
+msgstr "Tato akce zkonvertuje tvou knihovnu seriálů ({} seriálů) do nejnovější verze Stream Cinema Community. Odhadovaný čas je {} sekund. Spustit konverzi?"

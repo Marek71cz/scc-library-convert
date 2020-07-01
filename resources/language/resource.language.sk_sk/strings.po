@@ -43,9 +43,13 @@ msgstr "Konverzia knižnice"
 
 msgctxt "#30020"
 msgid "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?"
-msgstr "Táto akce skonvertuje tvoju knižnicu filmov ({} filmov) do aktuálnej verze Stream Cinema Community. Odhadovaný čas je {} sekúnd. Spustiť konverziu?"
+msgstr "Táto akcia skonvertuje tvoju knižnicu filmov ({} filmov) do aktuálnej verzie Stream Cinema Community. Odhadovaný čas je {} sekúnd. Spustiť konverziu?"
 
 msgctxt "#30021"
 msgid "Conversion of your library is in a process, please wait..."
 msgstr "Konverzia knižnice prebieha, prosím čakajte..."
+
+msgctxt "#30022"
+msgid "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?"
+msgstr "Táto akcia skonvertuje tvoju knižnicu seriálov ({} seriálov) do aktuálnej verzie Stream Cinema Community. Odhadovaný čas je {} sekúnd. Spustiť konverziu?"
 

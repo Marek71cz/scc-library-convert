@@ -3,13 +3,14 @@ import xbmcaddon
 import xbmcgui
 import xbmcvfs
 import os
-from os import path
 import urllib2
 from urllib2 import HTTPError
 import json
 from datetime import datetime
 import time
+import shutil
  
+MEDIA_URL = "https://plugin.sc2.zone/api/media/filter/{filter_name}?{query}"
 MEDIA_DETAIL_URL = "https://plugin.sc2.zone/api/media/{mediaid}";   
 MEDIA_SERVICE_URL = "https://plugin.sc2.zone/api/media/detail/service/{service}/{id}"
 STREAM_URL = "plugin://plugin.video.stream-cinema-2-release/process_media_item/?url=%2Fapi%2Fmedia%2F{mediaid}%2Fstreams&media_id={mediaid}&root_parent_id={root_parent_id}"
@@ -22,11 +23,29 @@ def getMediaDetailURL(mediaid):
 def getMediaServiceURL(service, id):
     return MEDIA_SERVICE_URL.format(service=service, id=id) 
 
+def getCSFDIdFromNFOFile(nfoPath):
+    file = open(nfoPath, 'r') 
+    lines = file.readlines()
+    file.close()
+    csfdId = ''
+    for line in lines: 
+        item = line.strip()
+        print("=> Line: {}".format(item))
+        index = item.find("film/")
+        if(index > -1):
+            csfdId = item
+            csfdId = csfdId[:-1]
+            csfdId = csfdId[index+5:]
+    return csfdId
+
+def clearFolder(path):
+    files = os.listdir(path)
+    for file in files:
+        filename = os.path.join(path, file)
+        if(os.path.isfile(filename)):
+            os.remove(filename)
+
 def writeStreamFile(strmPath, newStrm):
-    # if stream back up file exists, delete it
-    if(path.exists(strmPath + ".back")):
-        os.remove(strmPath + ".back")
-    os.rename(strmPath, strmPath + ".back")
     file = xbmcvfs.File(strmPath, 'w')
     file.write(str(newStrm))
     file.close()
@@ -42,7 +61,7 @@ def writeNFOFile(name, id, type):
         mediaDetail = json.loads(detailContents)
         if('services' in mediaDetail):
             services = mediaDetail['services']
-            if(path.exists(name)):
+            if(os.path.exists(name)):
                 os.remove(name)
             file = xbmcvfs.File(name, 'w')
             if('csfd' in services):
@@ -55,7 +74,7 @@ def writeNFOFile(name, id, type):
                 imdbId = services['imdb'] 
                 file.write("https://www.imdb.com/title/{}".format(imdbId) + "\n")
             file.close()
-        
+
 def convertMovies(mf):
     result = []
     now = datetime.now()
@@ -92,18 +111,7 @@ def convertMovies(mf):
             # it is SC1 stream file?
             if(line.find("plugin.video.stream-cinema/") > -1):
                 if os.path.isfile(nfoPath):
-                    file = open(nfoPath, 'r') 
-                    lines = file.readlines()
-                    file.close()
-                    csfdId = ''
-                    for line in lines: 
-                        item = line.strip()
-                        print("=> Line: {}".format(item))
-                        index = item.find("film/")
-                        if(index > -1):
-                            csfdId = item
-                            csfdId = csfdId[:-1]
-                            csfdId = csfdId[index+5:]
+                    csfdId = getCSFDIdFromNFOFile(nfoPath)
                     print("----- it is SC1 stream file, convert it! CSFD ID: " + csfdId)
                     
                     # call API service with csfd id and get mediaid
@@ -149,6 +157,10 @@ def convertMovies(mf):
             # it is stream URL from SC2 beta
             elif (line.find("plugin.video.stream-cinema-2/select_stream/") > -1):
                 result.append("- Movie {} cannot be converted from SC2 beta, not supported - media id mismatch".format(movie))
+                
+            else:
+                result.append("* Movie {} - no conversion needed, already in correct SCC format".format(movie))    
+
                                     
         else:
             result.append("- Movie {} cannot be processed, stream file is missing".format(movie))
@@ -175,11 +187,184 @@ def convertMovies(mf):
         resultFile.write(line)
         resultFile.write("\n")
     resultFile.close()
+
     
+def convertOneTVShow(tvshowPath, mediaid):
+    return    
 
 
 def convertTVShows(tf):
+    result = []
+    now = datetime.now()
+    result.append("Library conversion begin: {}".format(now.strftime("%Y%m%d-%H%M%S")))
+    result.append("TV Shows folder: {}".format(tf))
+    print("++++++++++ in convertTVShows, tf: " + tf)
+    # read content of TV Shows folder
     tvshows = os.listdir(tf)
+    count = 0
+    for item in tvshows:
+        if os.path.isdir(os.path.join(tf, item)):
+            count = count + 1
+    # ask user if he/she really wants to go through TV shows in library, time estimation
+    timeEst = count
+    answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30022).format(count,timeEst))
+    if(not(answer)):
+        return
+    dp = xbmcgui.DialogProgress()
+    dp.create(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30021))
+    tvshowsCount = count
+    i = 0; 
+    # iterate thru list and get csfd id from nfo file inside each folder
+    for tvshow in tvshows:
+        # is it directory
+        if(not(os.path.isdir(os.path.join(tf, tvshow)))):
+            continue
+        nfoPath = os.path.join(tf, tvshow, tvshow + ".nfo")
+        tvshowPath = os.path.join(tf, tvshow)
+        originalTitle = tvshow
+        if(not(os.path.exists(nfoPath))):
+            nfoPath = os.path.join(tvshowPath, "tvshow.nfo") 
+        # get first episode of the first season
+        # and from this episode find stream file format
+        seasons = os.listdir(tvshowPath)
+        firstSeason = ''
+        for item in seasons:
+            if(os.path.isdir(os.path.join(tvshowPath, item))): 
+                firstSeason = os.path.join(tvshowPath, item)
+                break
+                       
+        episodes = os.listdir(os.path.join(firstSeason))
+        firstEpisode = ''
+        for item in episodes:
+            if(os.path.isfile(os.path.join(firstSeason, item)) and (item.endswith(".strm"))):
+                firstEpisode = os.path.join(firstSeason, item)
+                break
+            
+        strmPath = firstEpisode
+        # read strm file of first episode to find whether it is SC1 or SCC
+        # strmPath = os.path.join(tvshowPath, firstSeason, firstEpisode)
+        print("++++++++++ strmPath: " + strmPath)
+        file = open(strmPath, 'r') 
+        lines = file.readlines()
+        file.close()
+        line = lines[0].strip()        
+        print("=> strm: " + line)
+
+        # is it SC1 stream file?
+        if(line.find("plugin.video.stream-cinema/") > -1):
+            if os.path.isfile(nfoPath):
+                convertResult = False
+                csfdId = getCSFDIdFromNFOFile(nfoPath)
+                print("----- it is SC1 type TV show, convert it! CSFD ID: " + csfdId)
+                # convert!
+                url = getMediaServiceURL('csfd', csfdId)
+                contents = ''
+                try:
+                    contents = urllib2.urlopen(url).read()
+                except HTTPError as err:
+                    result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
+                    print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
+                if(contents != ''):
+                    data = json.loads(contents)
+                    tvshowId = data['_id']
+                    url = MEDIA_URL.format(filter_name = "parent", query = "value=" + tvshowId + "&sort=episode")
+                    print('++++++++++ URL for seasons list: {}'.format(url))
+                    tvShowContents = ''
+                    seasonsList = []
+                    try:
+                        tvShowContents = urllib2.urlopen(url).read()
+                    except HTTPError as err:
+                        result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
+                        print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
+                    if(tvShowContents != ''):
+                        seasonData = json.loads(tvShowContents)
+                        seasonsCount = seasonData['totalCount']
+                        seasons = seasonData['data']
+                        clear = False
+                        for season in seasons:
+                            episodeNo = season['_source']['info_labels']['episode']
+                            
+                            if(episodeNo != 0):
+                                seasonDirName = os.path.join(tvshowPath, "Season 01")
+                                if(not(clear)):
+                                    if (os.path.isdir(seasonDirName)):
+                                        clearFolder(seasonDirName)
+                                        clear = True
+                                    else:
+                                        xbmcvfs.mkdir(seasonDirName)
+                                episodeId = season['_id']
+                                parentId = season['_source']['root_parent']
+                                seasonNo = season['_source']['info_labels']['season']
+                                episodeNo = season['_source']['info_labels']['episode']
+                                episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2), str(episodeNo).zfill(2))
+                                episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=parentId)
+                                print('++++++++++ WRITING STERAM FILE! file name: {}, content: {}'.format(os.path.join(seasonDirName, episodeFileName), episodeURL))
+                                writeStreamFile(os.path.join(seasonDirName, episodeFileName), episodeURL)
+                                convertResult = True
+                            
+                            else:        
+                                seasonNo = season['_source']['info_labels']['season']
+                                currentSeason = "Season {}".format(str(seasonNo).zfill(2))
+                                seasonId = season["_id"]
+                                seasonDirName = os.path.join(tvshowPath, currentSeason)
+                                if (os.path.isdir(seasonDirName)):
+                                    clearFolder(seasonDirName)
+                                else:
+                                    xbmcvfs.mkdir(seasonDirName)
+                                
+                                url = MEDIA_URL.format(filter_name = "parent", query = "value=" + seasonId + "&sort=episode")
+                                episodesContents = ''
+                                try:
+                                    episodesContents = urllib2.urlopen(url).read()
+                                except HTTPError as err:
+                                    result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
+                                    print('++++++++++ ERROR: {}, URL: {}'.format(err, url))
+                                if(episodesContents != ''):
+                                    episodesData = json.loads(episodesContents) 
+                                    episodes = episodesData['data']
+                                    episodesCount = episodesData['totalCount']
+                                    # e = 1
+                                    for episode in episodes:
+                                        seasonNo = episode['_source']['info_labels']['season']
+                                        episodeNo = episode['_source']['info_labels']['episode']
+                                        episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2), str(episodeNo).zfill(2))
+                                        episodeId = episode['_id']
+                                        episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=seasonId)
+                                        print('++++++++++ WRITING STERAM FILE! file name: {}, content: {}'.format(os.path.join(seasonDirName, episodeFileName), episodeURL))
+                                        writeStreamFile(os.path.join(seasonDirName, episodeFileName), episodeURL)
+                                        convertResult = True
+
+                if (convertResult == True):
+                    result.append("+ TV show {} converted from SC1 format".format(tvshow))
+
+            else:
+                result.append("- TV show {} cannot be converted from SC1 format, nfo file is missing".format(tvshow))
+
+        else:
+            result.append("* TV show {} - no conversion needed, already in correct SCC format".format(tvshow))    
+
+        # update progress dialog
+        i = i+1
+        print("------ UPDATE progress bar... TV Show number {}/{}, percentage: {}".format(i, tvshowsCount, int(100*float(i)/float(tvshowsCount))))
+        dp.update(int(100*float(i)/float(tvshowsCount)))
+        time.sleep(1)
+        
+        if(dp.iscanceled()):
+            result.append("- Library conversion process canceled by user!")            
+            break
+
+    # write result to a file in root directory of the library
+    dp.close()
+    now = datetime.now()
+    result.append("Library conversion end: {}".format(now.strftime("%Y%m%d-%H%M%S")))
+    resultFileName = os.path.join(tf, "result_{}.txt".format(now.strftime("%Y%m%d-%H%M%S")))
+    print("----- File name: {}".format(resultFileName))
+    print(result)
+    resultFile = xbmcvfs.File(os.path.join(tf, resultFileName), 'w')
+    for line in result:
+        resultFile.write(line)
+        resultFile.write("\n")
+    resultFile.close()
 
 
 def convertLibrary():
@@ -198,7 +383,9 @@ def convertLibrary():
     tf = ADDON.getSetting("tvshow_Folder")
     if tf != '':
         print("++++++++++ about to convert TV shows")
-        convertTVShows(tf)        
-
+        convertTVShows(tf)
+    
+    xbmc.executebuiltin('UpdateLibrary(video)')
+       
 
 convertLibrary()

@@ -1,2 +1,5 @@
+1.0.0
+Added support for TV shows. For TV shows conversion, please, read README.TXT file.
+
 0.1.0
-First public version - convert movies in user libraray to Stream Cinema Community format 1.4.0
+First public version - converts movies in user libraray to Stream Cinema Community format 1.4.0
