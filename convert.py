@@ -89,7 +89,7 @@ def convertMovies(mf):
     # ask user if he/she really wants to go through movies in library, time estimation
     timeEst = count/2
     # answer = xbmcgui.Dialog().yesno("Library conversion", "This will convert your movie library ({} movies) to the latest version of Stream Cinema Community. Estimated duration is {} seconds. Are you sure you want to run it now?".format(len(movies),timeEst))
-    answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30020).format(len(movies),timeEst))
+    answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30020).format(count,timeEst))
     if(not(answer)):
         return
     dp = xbmcgui.DialogProgress()
@@ -169,7 +169,6 @@ def convertMovies(mf):
         i = i+1
         print("------ UPDATE progress bar... movie number {}/{}, percentage: {}".format(i, moviesCount, int(100*float(i)/float(moviesCount))))
         dp.update(int(100*float(i)/float(moviesCount))
-        
         if(dp.iscanceled()):
             result.append("- Library conversion process canceled by user!")            
             break
