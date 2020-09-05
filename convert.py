@@ -168,8 +168,7 @@ def convertMovies(mf):
         # update progress dialog
         i = i+1
         print("------ UPDATE progress bar... movie number {}/{}, percentage: {}".format(i, moviesCount, int(100*float(i)/float(moviesCount))))
-        dp.update(int(100*float(i)/float(moviesCount)))
-        time.sleep(0.25)
+        dp.update(int(100*float(i)/float(moviesCount))
         
         if(dp.iscanceled()):
             result.append("- Library conversion process canceled by user!")            
@@ -275,7 +274,6 @@ def convertTVShows(tf):
                         seasons = seasonData['data']
                         clear = False
                         for season in seasons:
-                            sleep(0.5)
                             episodeNo = season['_source']['info_labels']['episode']
                             if(episodeNo != 0):
                                 seasonDirName = os.path.join(tvshowPath, "Season 01")
