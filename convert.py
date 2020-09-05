@@ -10,10 +10,10 @@ from datetime import datetime
 import time
 import shutil
  
-MEDIA_URL = "https://plugin.sc2.zone/api/media/filter/{filter_name}?{query}&access_token=9ajdu4xyn1ig8nxsodr3'
-MEDIA_DETAIL_URL = "https://plugin.sc2.zone/api/media/{mediaid}?access_token=9ajdu4xyn1ig8nxsodr3'
-MEDIA_SERVICE_URL = "https://plugin.sc2.zone/api/media/detail/service/{service}/{id}?access_token=9ajdu4xyn1ig8nxsodr3'
-STREAM_URL = "plugin://plugin.video.stream-cinema-2-release/process_media_item/?url=%2Fapi%2Fmedia%2F{mediaid}%2Fstreams&media_id={mediaid}&root_parent_id={root_parent_id}"
+MEDIA_URL = 'https://plugin.sc2.zone/api/media/filter/{filter_name}?{query}&access_token=9ajdu4xyn1ig8nxsodr3'
+MEDIA_DETAIL_URL = 'https://plugin.sc2.zone/api/media/{mediaid}?access_token=9ajdu4xyn1ig8nxsodr3'
+MEDIA_SERVICE_URL = 'https://plugin.sc2.zone/api/media/detail/service/{service}/{id}?access_token=9ajdu4xyn1ig8nxsodr3'
+STREAM_URL = 'plugin://plugin.video.stream-cinema-2-release/process_media_item/?url=%2Fapi%2Fmedia%2F{mediaid}%2Fstreams&media_id={mediaid}&root_parent_id={root_parent_id}'
 
 ADDON = xbmcaddon.Addon()     
 
