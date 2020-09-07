@@ -268,6 +268,8 @@ def convertTVShows(tf):
                     except HTTPError as err:
                         result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                     if(tvShowContents != ''):
+                        os.remove(os.path.join(tf, tvshow, 'tvshow.nfo'))
+                        writeNFOFile(os.path.join(tf, tvshow, tvshow + '.nfo'), tvshowId, 'tv')
                         seasonData = json.loads(tvShowContents)
                         seasonsCount = seasonData['totalCount']
                         seasons = seasonData['data']

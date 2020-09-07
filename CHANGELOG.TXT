@@ -1,3 +1,6 @@
+1.0.1
+Delete old TV show nfo file and write a new one with TV shows name
+
 1.0.0
 Added support for TV shows. For TV shows conversion, please, read README.TXT file.
 
