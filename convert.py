@@ -54,6 +54,7 @@ def writeNFOFile(name, id, type):
     detailContents = ''
     try:
         detailContents = urllib2.urlopen(url).read()
+        time.sleep(1)
     except HTTPError as err:
         print(err)
     if(detailContents != ''):
@@ -122,6 +123,7 @@ def convertMovies(mf):
                     contents = ''
                     try:
                         contents = urllib2.urlopen(url).read()
+                        time.sleep(1)
                     except HTTPError as err:
                         result.append("- Movie {} HTTP error {}".format(movie, err.code))
                     if(contents != ''):
@@ -255,6 +257,7 @@ def convertTVShows(tf):
                 contents = ''
                 try:
                     contents = urllib2.urlopen(url).read()
+                    time.sleep(1)
                 except HTTPError as err:
                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                 if(contents != ''):
@@ -265,6 +268,7 @@ def convertTVShows(tf):
                     seasonsList = []
                     try:
                         tvShowContents = urllib2.urlopen(url).read()
+                        time.sleep(1)
                     except HTTPError as err:
                         result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                     if(tvShowContents != ''):
@@ -307,6 +311,7 @@ def convertTVShows(tf):
                                 episodesContents = ''
                                 try:
                                     episodesContents = urllib2.urlopen(url).read()
+                                    time.sleep(1)
                                 except HTTPError as err:
                                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                                 if(episodesContents != ''):
@@ -336,8 +341,7 @@ def convertTVShows(tf):
         i = i+1
         print("------ UPDATE progress bar... TV Show number {}/{}, percentage: {}".format(i, tvshowsCount, int(100*float(i)/float(tvshowsCount))))
         dp.update(int(100*float(i)/float(tvshowsCount)))
-        time.sleep(1)
-        
+
         if(dp.iscanceled()):
             result.append("- Library conversion process canceled by user!")            
             break
