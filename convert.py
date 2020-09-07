@@ -112,7 +112,6 @@ def convert_movies(mf):
         return
     dp = xbmcgui.DialogProgress()
     dp.create(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30021))
-    moviesCount = count
     i = 0
     # iterate through list and get csfd id from nfo file inside each folder
     for movie in movies:
@@ -181,15 +180,14 @@ def convert_movies(mf):
             else:
                 result.append("* Movie {} - no conversion needed, already in correct SCC format".format(movie))
 
-
         else:
             result.append("- Movie {} cannot be processed, stream file is missing".format(movie))
 
         # update progress dialog
         i = i + 1
-        print("------ UPDATE progress bar... movie number {}/{}, percentage: {}".format(i, moviesCount, int(
-            100 * float(i) / float(moviesCount))))
-        dp.update(int(100 * float(i) / float(moviesCount)))
+        print("------ UPDATE progress bar... movie number {}/{}, percentage: {}".format(i, count, int(
+            100 * float(i) / float(count))))
+        dp.update(int(100 * float(i) / float(count)))
         if dp.iscanceled():
             result.append("- Library conversion process canceled by user!")
             break
@@ -213,57 +211,54 @@ def convert_tvshows(tf):
         if os.path.isdir(os.path.join(tf, item)):
             count = count + 1
     # ask user if he/she really wants to go through TV shows in library, time estimation
-    timeEst = count * 5
+    time_estimation = count * 5
     answer = xbmcgui.Dialog().yesno(ADDON.getLocalizedString(30019),
-                                    ADDON.getLocalizedString(30022).format(count, timeEst))
+                                    ADDON.getLocalizedString(30022).format(count, time_estimation))
     if not answer:
         return
     dp = xbmcgui.DialogProgress()
     dp.create(ADDON.getLocalizedString(30019), ADDON.getLocalizedString(30021))
-    tvshowsCount = count
     i = 0
-    # iterate thru list and get csfd id from nfo file inside each folder
+    # iterate through list and get csfd id from nfo file inside each folder
     for tvshow in tvshows:
         # is it directory
         if not (os.path.isdir(os.path.join(tf, tvshow))):
             continue
-        nfoPath = os.path.join(tf, tvshow, tvshow + ".nfo")
-        tvshowPath = os.path.join(tf, tvshow)
-        originalTitle = tvshow
-        if not (os.path.exists(nfoPath)):
-            nfoPath = os.path.join(tvshowPath, "tvshow.nfo")
-            # get first episode of the first season
+        nfo_path = os.path.join(tf, tvshow, tvshow + ".nfo")
+        tvshow_path = os.path.join(tf, tvshow)
+        if not (os.path.exists(nfo_path)):
+            nfo_path = os.path.join(tvshow_path, "tvshow.nfo")
+        # get first episode of the first season
         # and from this episode find stream file format
-        seasons = os.listdir(tvshowPath)
-        firstSeason = ''
+        seasons = os.listdir(tvshow_path)
+        first_season = ''
         for item in seasons:
-            if os.path.isdir(os.path.join(tvshowPath, item)):
-                firstSeason = os.path.join(tvshowPath, item)
+            if os.path.isdir(os.path.join(tvshow_path, item)):
+                first_season = os.path.join(tvshow_path, item)
                 break
 
-        episodes = os.listdir(os.path.join(firstSeason))
-        firstEpisode = ''
+        episodes = os.listdir(os.path.join(first_season))
+        first_episode = ''
         for item in episodes:
-            if os.path.isfile(os.path.join(firstSeason, item)) and (item.endswith(".strm")):
-                firstEpisode = os.path.join(firstSeason, item)
+            if os.path.isfile(os.path.join(first_season, item)) and (item.endswith(".strm")):
+                first_episode = os.path.join(first_season, item)
                 break
 
-        strmPath = firstEpisode
-        # read strm file of first episode to find whether it is SC1 or SCC
-        # strmPath = os.path.join(tvshowPath, firstSeason, firstEpisode)
-        file = open(strmPath, 'r')
+        strm_path = first_episode
+        # read stream file of first episode to find whether it is SC1 or SCC
+        file = open(strm_path, 'r')
         lines = file.readlines()
         file.close()
         line = lines[0].strip()
 
         # is it SC1 stream file?
         if line.find("plugin.video.stream-cinema/") > -1:
-            if os.path.isfile(nfoPath):
-                convertResult = False
-                csfdId = csfd_id_from_nfo(nfoPath)
-                print("----- it is SC1 type TV show, convert it! CSFD ID: " + csfdId)
+            if os.path.isfile(nfo_path):
+                convert_result = False
+                csfd_id = csfd_id_from_nfo(nfo_path)
+                print("----- it is SC1 type TV show, convert it! CSFD ID: " + csfd_id)
                 # convert!
-                url = media_service_url('csfd', csfdId)
+                url = media_service_url('csfd', csfd_id)
                 contents = ''
                 try:
                     contents = urllib2.urlopen(url).read()
@@ -272,75 +267,75 @@ def convert_tvshows(tf):
                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                 if contents != '':
                     data = json.loads(contents)
-                    tvshowId = data['_id']
-                    url = MEDIA_URL.format(filter_name="parent", query="value=" + tvshowId + "&sort=episode")
-                    tvShowContents = ''
-                    seasonsList = []
+                    tvshow_id = data['_id']
+                    url = MEDIA_URL.format(filter_name="parent", query="value=" + tvshow_id + "&sort=episode")
+                    tvshow_contents = ''
+                    #seasonsList = []
                     try:
-                        tvShowContents = urllib2.urlopen(url).read()
+                        tvshow_contents = urllib2.urlopen(url).read()
                         time.sleep(1)
                     except HTTPError as err:
                         result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                    if tvShowContents != '':
+                    if tvshow_contents != '':
                         os.remove(os.path.join(tf, tvshow, 'tvshow.nfo'))
-                        write_nfo_file(os.path.join(tf, tvshow, tvshow + '.nfo'), tvshowId, 'tv')
-                        seasonData = json.loads(tvShowContents)
-                        seasonsCount = seasonData['totalCount']
+                        write_nfo_file(os.path.join(tf, tvshow, tvshow + '.nfo'), tvshow_id, 'tv')
+                        seasonData = json.loads(tvshow_contents)
+                        #seasonsCount = seasonData['totalCount']
                         seasons = seasonData['data']
                         clear = False
                         for season in seasons:
-                            episodeNo = season['_source']['info_labels']['episode']
-                            if (episodeNo != 0):
-                                seasonDirName = os.path.join(tvshowPath, "Season 01")
-                                if (not (clear)):
-                                    if (os.path.isdir(seasonDirName)):
-                                        clear_folder(seasonDirName)
+                            episode_no = season['_source']['info_labels']['episode']
+                            if episode_no != 0:
+                                season_dirname = os.path.join(tvshow_path, "Season 01")
+                                if not (clear):
+                                    if os.path.isdir(season_dirname):
+                                        clear_folder(season_dirname)
                                         clear = True
                                     else:
-                                        xbmcvfs.mkdir(seasonDirName)
-                                episodeId = season['_id']
-                                parentId = season['_source']['root_parent']
-                                seasonNo = season['_source']['info_labels']['season']
-                                episodeNo = season['_source']['info_labels']['episode']
-                                episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2), str(episodeNo).zfill(2))
-                                episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=parentId)
-                                write_stream_file(os.path.join(seasonDirName, episodeFileName), episodeURL)
-                                convertResult = True
+                                        xbmcvfs.mkdir(season_dirname)
+                                episode_id = season['_id']
+                                parent_id = season['_source']['root_parent']
+                                season_no = season['_source']['info_labels']['season']
+                                episode_no = season['_source']['info_labels']['episode']
+                                episode_filename = "S{}E{}.strm".format(str(season_no).zfill(2), str(episode_no).zfill(2))
+                                episode_url = STREAM_URL.format(mediaid=episode_id, root_parent_id=parent_id)
+                                write_stream_file(os.path.join(season_dirname, episode_filename), episode_url)
+                                convert_result = True
 
                             else:
-                                seasonNo = season['_source']['info_labels']['season']
-                                currentSeason = "Season {}".format(str(seasonNo).zfill(2))
-                                seasonId = season["_id"]
-                                seasonDirName = os.path.join(tvshowPath, currentSeason)
-                                if (os.path.isdir(seasonDirName)):
-                                    clear_folder(seasonDirName)
+                                season_no = season['_source']['info_labels']['season']
+                                current_season = "Season {}".format(str(season_no).zfill(2))
+                                season_id = season["_id"]
+                                season_dirname = os.path.join(tvshow_path, current_season)
+                                if (os.path.isdir(season_dirname)):
+                                    clear_folder(season_dirname)
                                 else:
-                                    xbmcvfs.mkdir(seasonDirName)
+                                    xbmcvfs.mkdir(season_dirname)
 
                                 url = MEDIA_URL.format(filter_name="parent",
-                                                       query="value=" + seasonId + "&sort=episode")
-                                episodesContents = ''
+                                                       query="value=" + season_id + "&sort=episode")
+                                episodes_contents = ''
                                 try:
-                                    episodesContents = urllib2.urlopen(url).read()
+                                    episodes_contents = urllib2.urlopen(url).read()
                                     time.sleep(1)
                                 except HTTPError as err:
                                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                                if episodesContents != '':
-                                    episodesData = json.loads(episodesContents)
-                                    episodes = episodesData['data']
-                                    episodesCount = episodesData['totalCount']
+                                if episodes_contents != '':
+                                    episodes_data = json.loads(episodes_contents)
+                                    episodes = episodes_data['data']
+                                    #episodesCount = episodes_data['totalCount']
                                     # e = 1
                                     for episode in episodes:
-                                        seasonNo = episode['_source']['info_labels']['season']
-                                        episodeNo = episode['_source']['info_labels']['episode']
-                                        episodeFileName = "S{}E{}.strm".format(str(seasonNo).zfill(2),
-                                                                               str(episodeNo).zfill(2))
-                                        episodeId = episode['_id']
-                                        episodeURL = STREAM_URL.format(mediaid=episodeId, root_parent_id=seasonId)
-                                        write_stream_file(os.path.join(seasonDirName, episodeFileName), episodeURL)
-                                        convertResult = True
+                                        season_no = episode['_source']['info_labels']['season']
+                                        episode_no = episode['_source']['info_labels']['episode']
+                                        episode_filename = "S{}E{}.strm".format(str(season_no).zfill(2),
+                                                                               str(episode_no).zfill(2))
+                                        episode_id = episode['_id']
+                                        episode_url = STREAM_URL.format(mediaid=episode_id, root_parent_id=season_id)
+                                        write_stream_file(os.path.join(season_dirname, episode_filename), episode_url)
+                                        convert_result = True
 
-                if convertResult == True:
+                if convert_result:
                     result.append("+ TV show {} converted from SC1 format".format(tvshow))
 
             else:
@@ -349,11 +344,11 @@ def convert_tvshows(tf):
         else:
             result.append("* TV show {} - no conversion needed, already in correct SCC format".format(tvshow))
 
-            # update progress dialog
+        # update progress dialog
         i = i + 1
-        print("------ UPDATE progress bar... TV Show number {}/{}, percentage: {}".format(i, tvshowsCount, int(
-            100 * float(i) / float(tvshowsCount))))
-        dp.update(int(100 * float(i) / float(tvshowsCount)))
+        print("------ UPDATE progress bar... TV Show number {}/{}, percentage: {}"
+              .format(i, count, int(100 * float(i) / float(count))))
+        dp.update(int(100 * float(i) / float(count)))
 
         if dp.iscanceled():
             result.append("- Library conversion process canceled by user!")
