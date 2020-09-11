@@ -1,3 +1,8 @@
+1.1.0
+Fixed empty TV show directory error
+Fixed bug if TV show not found in SCC
+Fixed bug is csfd id does not end with '-' in old SC1 librray nfo file
+
 1.0.1
 Delete old TV show nfo file and write a new one with TV shows name
 
