@@ -67,18 +67,18 @@ def write_nfo_file(name, media_id, type):
         media_detail = json.loads(detail_contents)
         if 'services' in media_detail:
             services = media_detail['services']
-            if (os.path.exists(name)):
+            if os.path.exists(name):
                 os.remove(name)
             file = xbmcvfs.File(name, 'w')
             if 'csfd' in services:
-                csfdId = services['csfd']
-                file.write("https://www.csfd.cz/film/{}".format(csfdId) + "\n")
+                csfd_id = services['csfd']
+                file.write('https://www.csfd.cz/film/{}'.format(csfd_id) + '\n')
             if 'tmdb' in services:
-                tmdbId = services['tmdb']
-                file.write("https://www.themoviedb.org/{}/{}".format(type, tmdbId) + "\n")
+                tmdb_id = services['tmdb']
+                file.write('https://www.themoviedb.org/{}/{}'.format(type, tmdb_id) + '\n')
             if 'imdb' in services:
-                imdbId = services['imdb']
-                file.write("https://www.imdb.com/title/{}".format(imdbId) + "\n")
+                imdb_id = services['imdb']
+                file.write('https://www.imdb.com/title/{}'.format(imdb_id) + '\n')
             file.close()
 
 
@@ -264,14 +264,12 @@ def convert_tvshows(tf):
                 csfd_id = csfd_id_from_nfo(nfo_path)
                 print("----- it is SC1 type TV show, convert it! CSFD ID: " + csfd_id)
                 url = media_service_url('csfd', csfd_id)
-                print('calling url: {}'.format(url))
                 contents = ''
                 try:
                     contents = urllib2.urlopen(url).read()
                     time.sleep(1)
                 except HTTPError as err:
                     result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
-                print('result from server: {}'.format(contents))
                 if contents != '':
                     data = json.loads(contents)
                     tvshow_id = data['_id']
@@ -304,6 +302,8 @@ def convert_tvshows(tf):
                                 episode_id = season['_id']
                                 parent_id = season['_source']['root_parent']
                                 season_no = season['_source']['info_labels']['season']
+                                if season_no == 0:
+                                    season_no = 1
                                 episode_no = season['_source']['info_labels']['episode']
                                 episode_filename = "S{}E{}.strm".format(str(season_no).zfill(2),
                                                                         str(episode_no).zfill(2))
@@ -313,6 +313,8 @@ def convert_tvshows(tf):
 
                             else:
                                 season_no = season['_source']['info_labels']['season']
+                                if season_no == 0:
+                                    season_no = 1
                                 current_season = "Season {}".format(str(season_no).zfill(2))
                                 season_id = season["_id"]
                                 season_dirname = os.path.join(tvshow_path, current_season)
@@ -336,6 +338,8 @@ def convert_tvshows(tf):
                                     # e = 1
                                     for episode in episodes:
                                         season_no = episode['_source']['info_labels']['season']
+                                        if season_no == 0:
+                                            season_no = 1
                                         episode_no = episode['_source']['info_labels']['episode']
                                         episode_filename = "S{}E{}.strm".format(str(season_no).zfill(2),
                                                                                 str(episode_no).zfill(2))
