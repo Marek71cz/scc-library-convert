@@ -33,11 +33,10 @@ def csfd_id_from_nfo(nfo_path):
     for line in lines:
         item = line.strip()
         index = item.find("film/")
-        print('get csfd id, item: {}, index: {}'.format(item, index))
         if index > -1:
             if item.endswith('-'):
-                csfd_id = item[:-1]
-            csfd_id = csfd_id[index + 5:]
+                item = item[:-1]
+            csfd_id = item[index + 5:]
     return csfd_id
 
 
