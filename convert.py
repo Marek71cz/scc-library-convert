@@ -140,7 +140,10 @@ def convert_movies(mf):
                         contents = urllib2.urlopen(url).read()
                         time.sleep(1)
                     except HTTPError as err:
-                        result.append("- Movie {} HTTP error {}".format(movie, err.code))
+                        if err.code == 403:
+                            result.append("- Movie {} cannot be converted, not found in SCC".format(movie))
+                        else:
+                            result.append("- Movie {} HTTP error {}".format(movie, err.code))
                     if contents != '':
                         data = json.loads(contents)
                         scc_id = data['_id']
