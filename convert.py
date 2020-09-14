@@ -268,7 +268,10 @@ def convert_tvshows(tf):
                     contents = urllib2.urlopen(url).read()
                     time.sleep(1)
                 except HTTPError as err:
-                    result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
+                    if err.code == 403:
+                        result.append("- TV show {} cannot be converted, not found in SCC".format(tvshow))
+                    else:
+                        result.append("- TV show {} HTTP error {}".format(tvshow, err.code))
                 if contents != '':
                     data = json.loads(contents)
                     tvshow_id = data['_id']
@@ -282,7 +285,7 @@ def convert_tvshows(tf):
                     if tvshow_contents != '':
                         seasons = json.loads(tvshow_contents)['data']
                         if len(seasons) == 0:
-                            result.append("- TV show {} cannot be converted, not found in SCC.".format(tvshow))
+                            result.append("- TV show {} cannot be converted, no streams found in SCC. Please, request.".format(tvshow))
                             continue
                         if os.path.isfile(os.path.join(tf, tvshow, 'tvshow.nfo')):
                             os.remove(os.path.join(tf, tvshow, 'tvshow.nfo'))

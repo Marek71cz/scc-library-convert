@@ -1,3 +1,6 @@
+1.1.1
+Changed messages in result protocol 
+
 1.1.0
 Fixed empty TV show directory error
 Fixed bug if TV show not found in SCC
